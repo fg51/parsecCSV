@@ -15,15 +15,36 @@ someFunc = do
   either (\e -> print e) (\x -> print x)  result
 
 
-parseCSV :: String -> Either ParseError [[String]]
-parseCSV xs = parse csvFile "error" xs
+data SampleData = SampleData
+  { sampleDate :: String
+  , sampleModel :: String
+  , sampleSerial :: String
+  , sampleData :: [[String]]
+  } deriving Show
+
+
+parseCSV :: String -> Either ParseError SampleData
+parseCSV xs = parse csvSampleData "error" xs
+
+csvSampleData :: Parser SampleData
+csvSampleData = do
+  header <- csvHead
+  xs <- csvFile
+  return SampleData
+    { sampleDate   = header !! 0
+    , sampleModel  = header !! 1
+    , sampleSerial = header !! 2
+    , sampleData   = xs
+    }
+
+csvHead :: Parser [String]
+csvHead = csvLine <* eol
 
 
 csvFile :: Parser [[String]]
 csvFile = endBy csvLine eol
-  where
-    eol = char '\n'
 
+eol = char '\n'
 
 csvLine :: Parser [String]
 csvLine = sepBy cell sep
@@ -37,3 +58,5 @@ cell = blank *> cell' <|> cell'
     blank = char ' '
     cell' :: Parser String
     cell' = many (noneOf ",\n")
+
+
